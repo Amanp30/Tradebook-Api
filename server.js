@@ -34,7 +34,10 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Origin",
+    "https://testing-react-js-xi.vercel.app"
+  );
   res.header(
     "Access-Control-Allow-Headers",
     "X-Requested-With, Content-Type, Origin, Authorization, Accept, Client-Security-Token, Accept-Encoding"
@@ -51,7 +54,7 @@ app.use("/api", tradeRoutes);
 //cors
 const corsOptions = {
   // origin: "http://localhost:3000", // set your desired origins or allow any origin with *
-  origin: "*", // set your desired origins or allow any origin with *
+  origin: "https://testing-react-js-xi.vercel.app", // set your desired origins or allow any origin with *
   credentials: true, //access-control-allow-credentials:true
   optionSuccessStatus: 200,
   methods: ["GET", "POST", "PUT", "DELETE"],
