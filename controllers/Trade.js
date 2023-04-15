@@ -93,7 +93,7 @@ exports.editTrade = async (req, res) => {
     return res.status(200).json(trade);
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "Error fetching trades." });
+    return res.status(500).json({ message: "Error fetching trades" });
   }
 };
 
