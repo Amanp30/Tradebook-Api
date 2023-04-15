@@ -161,7 +161,7 @@ exports.deleteTradeById = async (req, res) => {
 
     const { chart } = await Trade.findById(tradeId);
 
-    if (chart !== "") {
+    if (chart !== "" && typeof chart !== "undefined") {
       fs.unlink(`uploads/${chart}`, (err) => {
         if (err) {
           console.error(err);
