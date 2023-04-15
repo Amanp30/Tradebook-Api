@@ -6,14 +6,24 @@ const userSchema = new mongoose.Schema(
     firstname: {
       type: String,
       require: true,
+      default: "",
     },
     lastname: {
       type: String,
       require: true,
+      default: "",
     },
     email: {
       type: "String",
       lowerCase: true,
+    },
+    state: {
+      type: String,
+      default: "",
+    },
+    mobileno: {
+      type: String,
+      default: "",
     },
     broker: { type: String, default: "" },
     hashed_password: {

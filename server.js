@@ -15,6 +15,7 @@ const Allowedurl =
 //bringing router
 const userRoutes = require("./routes/User");
 const tradeRoutes = require("./routes/Trades");
+const accountRoutes = require("./routes/Account");
 
 //app
 
@@ -51,6 +52,7 @@ app.use(function (req, res, next) {
 //route middlewares
 app.use("/api", userRoutes);
 app.use("/api", tradeRoutes);
+app.use("/api", accountRoutes);
 
 //cors
 const corsOptions = {

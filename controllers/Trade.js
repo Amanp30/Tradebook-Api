@@ -1,7 +1,6 @@
 const Trade = require("../models/Trade");
 const { extractFields } = require("../helpers/extractfields");
 const fs = require("fs");
-const checkBeforeDelete = require("../helpers/checkbeforedelete");
 const formidable = require("formidable");
 const { fileCopy } = require("../helpers/filecopy");
 const form = formidable({ multiples: true });
@@ -65,8 +64,9 @@ exports.addTrade = async (req, res) => {
 };
 
 exports.DistinctSymbols = async (req, res) => {
+  const { userid } = req.params;
   try {
-    const symbols = await Trade.distinct("symbol");
+    const symbols = await Trade.distinct("symbol", { user: userid });
     return res.status(200).json({ symbols });
   } catch (err) {
     console.error(err);
