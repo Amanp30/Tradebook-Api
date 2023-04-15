@@ -76,7 +76,8 @@ exports.DistinctSymbols = async (req, res) => {
 
 exports.showtrades = async (req, res) => {
   try {
-    const trades = await Trade.find({}).sort({ entrydate: -1 });
+    const userid = req.params.userid;
+    const trades = await Trade.find({ user: userid }).sort({ entrydate: -1 });
     return res.status(200).json({ trades });
   } catch (err) {
     console.error(err);
@@ -87,7 +88,8 @@ exports.showtrades = async (req, res) => {
 exports.editTrade = async (req, res) => {
   try {
     const tradeid = req.params.tradeid;
-    const trade = await Trade.findById(tradeid);
+    const userid = req.params.userid;
+    const trade = await Trade.find({ _id: tradeid, user: userid });
     return res.status(200).json(trade);
   } catch (err) {
     console.error(err);
