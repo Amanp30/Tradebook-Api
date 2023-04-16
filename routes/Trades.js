@@ -6,6 +6,7 @@ const {
   editTrade,
   deleteTradeById,
   updateTrade,
+  saveNewNamesofSymbols,
 } = require("../controllers/Trade");
 const { requireSignin } = require("../validators/jwtvalidator");
 
@@ -13,6 +14,7 @@ const router = express.Router();
 
 router.post("/trade/add", requireSignin, addTrade);
 router.post("/trade/update/:tradeid", requireSignin, updateTrade);
+router.post("/trade/nameupdate/:userid", requireSignin, saveNewNamesofSymbols);
 
 router.get("/trade/distinctsymbol/:userid", requireSignin, DistinctSymbols);
 router.get("/trade/edit/:tradeid/:userid", requireSignin, editTrade);

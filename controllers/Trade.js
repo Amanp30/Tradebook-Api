@@ -3,6 +3,7 @@ const { extractFields } = require("../helpers/extractfields");
 const fs = require("fs");
 const formidable = require("formidable");
 const { fileCopy } = require("../helpers/filecopy");
+const { throws } = require("assert");
 const form = formidable({ multiples: true });
 
 exports.addTrade = async (req, res) => {
@@ -179,5 +180,34 @@ exports.deleteTradeById = async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Error deleting trade" });
+  }
+};
+
+exports.saveNewNamesofSymbols = async (req, res) => {
+  try {
+    const { userid } = req.params;
+
+    form.parse(req, async (err, fields, files) => {
+      if (err) {
+        reject(err);
+      }
+
+      // console.log(fields);
+      // Update all trades with the given user ID and symbol
+      const updateResult = await Trade.updateMany(
+        { user: userid, symbol: fields.symbol },
+        { $set: { symbol: fields.newSymbol } }
+      );
+
+      // throw new Error("Something went wrong");
+      // Check if any trades were updated
+      if (updateResult) {
+        return res.json({
+          message: `Symbol updated`,
+        });
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to update trades", error });
   }
 };
