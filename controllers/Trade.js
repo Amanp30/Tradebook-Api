@@ -211,3 +211,85 @@ exports.saveNewNamesofSymbols = async (req, res) => {
     return res.status(500).json({ message: "Failed to update trades", error });
   }
 };
+
+exports.addNote = async (req, res) => {
+  const { tradeid } = req.params;
+  form.parse(req, async (err, fields) => {
+    if (err) {
+      return res.status(500).send(err);
+    }
+    const { note } = fields;
+    console.log(fields);
+    try {
+      const trade = await Trade.findById(tradeid);
+
+      if (!trade) {
+        return res.status(404).send("Trade not found");
+      }
+
+      trade.notes.push(note);
+      const updatedTrade = await trade.save();
+      // console.log(updatedTrade.notes);
+      res
+        .status(201)
+        .json({ message: "Note Added", notes: updatedTrade.notes });
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  });
+};
+
+exports.deleteNote = async (req, res) => {
+  const { tradeid } = req.params;
+  form.parse(req, async (err, fields) => {
+    if (err) {
+      return res.status(500).send(err);
+    }
+    const noteIndex = fields.index;
+    console.log(fields);
+    try {
+      const trade = await Trade.findById(tradeid);
+
+      if (!trade) {
+        return res.status(404).send("Trade not found");
+      }
+
+      trade.notes.splice(noteIndex, 1);
+      const updatedTrade = await trade.save();
+      // console.log(updatedTrade.notes);
+      res
+        .status(201)
+        .json({ message: "Note deleted", notes: updatedTrade.notes });
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  });
+};
+
+exports.updateNote = async (req, res) => {
+  const { tradeid } = req.params;
+  form.parse(req, async (err, fields) => {
+    if (err) {
+      return res.status(500).send(err);
+    }
+    const noteIndex = fields.noteindex;
+    const note = fields.note;
+    console.log(fields);
+    try {
+      const trade = await Trade.findById(tradeid);
+
+      if (!trade) {
+        return res.status(404).send("Trade not found");
+      }
+
+      trade.notes[noteIndex] = note;
+      const updatedTrade = await trade.save();
+      console.log(updatedTrade.notes);
+      res
+        .status(201)
+        .json({ message: "Note Updated", notes: updatedTrade.notes });
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  });
+};
