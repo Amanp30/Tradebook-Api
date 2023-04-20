@@ -3,8 +3,8 @@ const { extractFields } = require("../helpers/extractfields");
 const fs = require("fs");
 const formidable = require("formidable");
 const { fileCopy } = require("../helpers/filecopy");
-const { throws } = require("assert");
 const form = formidable({ multiples: true });
+const { throws } = require("assert");
 
 exports.addTrade = async (req, res) => {
   const form = formidable({ multiples: false });
@@ -78,7 +78,9 @@ exports.DistinctSymbols = async (req, res) => {
 exports.showtrades = async (req, res) => {
   try {
     const userid = req.params.userid;
-    const trades = await Trade.find({ user: userid }).sort({ entrydate: -1 });
+    const trades = await Trade.find({ user: userid })
+      .sort({ entrydate: -1 })
+      .limit(20);
     return res.status(200).json({ trades });
   } catch (err) {
     console.error(err);
