@@ -413,3 +413,192 @@ exports.bytimeframe = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" }); // send error response with status code 500
   }
 };
+
+exports.bysymbol = async (req, res) => {
+  console.log(req.params.userid);
+  try {
+    const distinctsymbol = await Trade.distinct("symbol", {
+      user: req.params.userid,
+    });
+
+    console.log(distinctsymbol);
+
+    const pipeline = [
+      {
+        $facet: {
+          data: [
+            {
+              $match: {
+                user: new mongoose.Types.ObjectId(req.params.userid),
+              },
+            },
+            { $sort: { symbol: 1, returnpercent: -1, profit: -1 } },
+            {
+              $group: {
+                _id: "$symbol",
+                symbol: { $push: "$symbol" },
+                totalPnL: { $sum: "$netpnl" },
+                totalFees: { $sum: "$fees" },
+                winRate: {
+                  $avg: {
+                    $cond: [{ $gt: ["$netpnl", 0] }, 1, 0],
+                  },
+                },
+                lossRate: {
+                  $avg: {
+                    $cond: [{ $lt: ["$netpnl", 0] }, 1, 0],
+                  },
+                },
+                breakevenRate: {
+                  $avg: {
+                    $cond: [{ $eq: ["$netpnl", 0] }, 1, 0],
+                  },
+                },
+                maxReturnPercent: { $max: "$returnpercent" },
+                minReturnPercent: { $min: "$returnpercent" },
+                averageReturnPercent: { $avg: "$returnpercent" },
+                countTrades: { $sum: 1 },
+
+                bestTrade: { $first: "$$ROOT" },
+                worstTrade: { $last: "$$ROOT" },
+                trades: { $push: "$$ROOT" },
+              },
+            },
+            { $sort: { _id: 1 } },
+            {
+              $addFields: {
+                sortOrderIndex: {
+                  $indexOfArray: [distinctsymbol, "$_id"],
+                },
+              },
+            },
+            {
+              $sort: {
+                sortOrderIndex: 1,
+              },
+            },
+          ],
+          bestTrades: [
+            {
+              $match: {
+                user: new mongoose.Types.ObjectId(req.params.userid),
+                outcome: "Win",
+              },
+            },
+            { $sort: { returnpercent: -1, profit: -1 } },
+            {
+              $group: {
+                _id: "$symbol",
+                trades: { $push: "$$ROOT" },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                bestTrades: { $slice: ["$trades", 2] },
+              },
+            },
+            {
+              $addFields: {
+                sortOrderIndex: {
+                  $indexOfArray: [distinctsymbol, "$_id"],
+                },
+              },
+            },
+            {
+              $sort: {
+                sortOrderIndex: 1,
+              },
+            },
+          ],
+          worstTrades: [
+            {
+              $match: {
+                user: new mongoose.Types.ObjectId(req.params.userid),
+                outcome: "Loss",
+              },
+            },
+            { $sort: { returnpercent: 1, profit: 1 } },
+            {
+              $group: {
+                _id: "$symbol",
+                trades: { $push: "$$ROOT" },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                worstTrades: { $slice: ["$trades", 5] },
+              },
+            },
+            {
+              $addFields: {
+                sortOrderIndex: {
+                  $indexOfArray: [distinctsymbol, "$_id"],
+                },
+              },
+            },
+            {
+              $sort: {
+                sortOrderIndex: 1,
+              },
+            },
+          ],
+        },
+      },
+    ];
+
+    const result = await Trade.aggregate(pipeline); // perform aggregation
+    const data = result[0].data || []; // get data array from aggregation result or use empty array as default
+
+    const pnlArray = data.map((d) => d.totalPnL);
+    const orderIndex = data.map((d) => d.sortOrderIndex);
+    const averageReturnPercent = data.map((d) => d.averageReturnPercent);
+    const labels = data.map((d) => d._id);
+    const tradecount = data.map((d) => d.countTrades);
+
+    const color = colorchartjs(pnlArray, "#2E7D32", "#D32F2F", 0); // generate chart color based on pnlArray
+
+    const response = {
+      result,
+      data,
+      bestTrades: result[0].bestTrades,
+      worstTrades: result[0].worstTrades,
+      orderIndex,
+      pnlArray,
+      averageReturnPercent,
+      labels,
+      tradecount,
+      color,
+    };
+
+    res.json(response); // send response as JSON
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" }); // send error response with status code 500
+  }
+};
+
+// const copyTrade = async (req, res, next) => {
+//   try {
+//     const originalTrade = await Trade.findById("643f6a0b387db674c9f818bf");
+
+//     const newTrade = new Trade({
+//       ...originalTrade.toObject(),
+//       _id: undefined, // to create a new document with a new _id
+//       symbol: "IPCALAB", // change the symbol field
+//     });
+
+//     await newTrade.save();
+//     console.log(newTrade);
+
+//     // res
+//     //   .status(201)
+//     //   .json({ message: "Trade copied successfully", trade: newTrade });
+//   } catch (err) {
+//     console.error(err);
+//     // res.status(500).send("Server Error");
+//   }
+// };
+
+// copyTrade();
