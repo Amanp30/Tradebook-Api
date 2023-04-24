@@ -332,7 +332,7 @@ exports.bytimeframe = async (req, res) => {
             {
               $project: {
                 _id: 1,
-                bestTrades: { $slice: ["$trades", 2] },
+                bestTrades: { $slice: ["$trades", 5] },
               },
             },
             {
@@ -421,7 +421,7 @@ exports.bysymbol = async (req, res) => {
       user: req.params.userid,
     });
 
-    console.log(distinctsymbol);
+    // console.log(distinctsymbol);
 
     const pipeline = [
       {
@@ -495,7 +495,7 @@ exports.bysymbol = async (req, res) => {
             {
               $project: {
                 _id: 1,
-                bestTrades: { $slice: ["$trades", 2] },
+                bestTrades: { $slice: ["$trades", 5] },
               },
             },
             {
@@ -586,7 +586,7 @@ exports.bysymbol = async (req, res) => {
 //     const newTrade = new Trade({
 //       ...originalTrade.toObject(),
 //       _id: undefined, // to create a new document with a new _id
-//       symbol: "IPCALAB", // change the symbol field
+//       symbol: "LT", // change the symbol field
 //     });
 
 //     await newTrade.save();
