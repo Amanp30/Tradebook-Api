@@ -6,6 +6,7 @@ const {
   bymonthly,
   byweekdays,
   byvolumes,
+  byhourly,
 } = require("../controllers/Reports");
 
 const { requireSignin } = require("../validators/jwtvalidator");
@@ -18,5 +19,6 @@ router.get("/report/byyearly/:userid", requireSignin, byyearly);
 router.get("/report/bymonthly/:userid", requireSignin, bymonthly);
 router.get("/report/byweekday/:userid", requireSignin, byweekdays);
 router.get("/report/byvolume/:userid", requireSignin, byvolumes);
+router.get("/report/byhourly/:userid", requireSignin, byhourly);
 
 module.exports = router;

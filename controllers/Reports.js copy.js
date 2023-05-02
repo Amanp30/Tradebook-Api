@@ -4,8 +4,8 @@ const { extractFields } = require("../helpers/extractfields");
 const fs = require("fs");
 const formidable = require("formidable");
 const form = formidable({ multiples: true });
-const _ = require("lodash");
 const { colorchartjs } = require("colorchartjs");
+const _ = require("lodash");
 
 exports.gettingReports = (req, res) => {
   const pipeline = [
