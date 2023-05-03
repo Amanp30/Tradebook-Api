@@ -1766,26 +1766,54 @@ exports.byhourly = async (req, res) => {
   }
 };
 
-// const copyTrade = async (req, res, next) => {
-//   try {
-//     const originalTrade = await Trade.findById("643f6a0b387db674c9f818bf");
+exports.calendarReport = async (req, res) => {
+  const currentYear = new Date().getFullYear(); // get current year
+  const startDate = new Date(currentYear, 0, 1); // create start date for current year (January 1st)
+  const endDate = new Date(currentYear, 11, 31);
 
-//     const newTrade = new Trade({
-//       ...originalTrade.toObject(),
-//       _id: undefined, // to create a new document with a new _id
-//       symbol: "LT", // change the symbol field
-//     });
+  const pipeline = [
+    {
+      $match: {
+        user: new mongoose.Types.ObjectId(req.params.userid),
+        entrydate: {
+          $gte: startDate,
+          $lte: endDate,
+        },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$entrydate" } },
+        profitinrs: { $sum: "$profit" },
+        trades: { $push: "$$ROOT" },
+      },
+    },
+  ];
 
-//     await newTrade.save();
-//     console.log(newTrade);
+  var result = await Trade.aggregate(pipeline);
+  res.json(result);
+};
 
-//     // res
-//     //   .status(201)
-//     //   .json({ message: "Trade copied successfully", trade: newTrade });
-//   } catch (err) {
-//     console.error(err);
-//     // res.status(500).send("Server Error");
-//   }
-// };
+const copyTrade = async (req, res, next) => {
+  try {
+    const originalTrade = await Trade.findById("6451d9740e5282a82821275a");
 
-// copyTrade();
+    const newTrade = new Trade({
+      ...originalTrade.toObject(),
+      _id: undefined, // to create a new document with a new _id
+      symbol: "LENOVO", // change the symbol field
+    });
+
+    await newTrade.save();
+    console.log(newTrade);
+
+    // res
+    //   .status(201)
+    //   .json({ message: "Trade copied successfully", trade: newTrade });
+  } catch (err) {
+    console.error(err);
+    // res.status(500).send("Server Error");
+  }
+};
+
+copyTrade();
