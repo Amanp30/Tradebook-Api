@@ -1785,35 +1785,85 @@ exports.calendarReport = async (req, res) => {
       $group: {
         _id: { $dateToString: { format: "%Y-%m-%d", date: "$entrydate" } },
         profitinrs: { $sum: "$profit" },
-        trades: { $push: "$$ROOT" },
+        fees: { $sum: "$fees" },
+        tradecount: { $sum: 1 },
+        winRate: {
+          $avg: {
+            $cond: [{ $gt: ["$netpnl", 0] }, 1, 0],
+          },
+        },
+        lossRate: {
+          $avg: {
+            $cond: [{ $lt: ["$netpnl", 0] }, 1, 0],
+          },
+        },
+        trades: {
+          $push: {
+            _id: "$_id",
+            symbol: "$symbol",
+            action: "$action",
+            profit: "$profit",
+            quantity: "$quantity",
+            outcome: "$outcome",
+            entryprice: "$entryprice",
+            exitprice: "$exitprice",
+            entrydate: "$entrydate",
+            exitdate: "$exitdate",
+            timeframe: "$timeframe",
+            returnpercent: "$returnpercent",
+          },
+        },
       },
     },
   ];
 
   var result = await Trade.aggregate(pipeline);
-  res.json(result);
+
+  const totalfeespaid = _.sumBy(result, "fees");
+  const totalprofit = _.sumBy(result, "profitinrs");
+  const thenetpnl = totalprofit - totalfeespaid;
+  const tradestaken = _.sumBy(result, "tradecount");
+
+  const numTrades = result.length;
+  const numWins = _.sumBy(result, (trade) => trade.profitinrs > 0);
+  const numLosses = _.sumBy(result, (trade) => trade.profitinrs < 0);
+
+  const winRate = ((numWins / numTrades) * 100).toFixed(0);
+  const lossRate = ((numLosses / numTrades) * 100).toFixed(0);
+
+  const response = {
+    result,
+    winRate,
+    lossRate,
+    totalfeespaid,
+    totalprofit,
+    thenetpnl,
+    tradestaken,
+  };
+
+  res.json(response);
 };
 
-const copyTrade = async (req, res, next) => {
-  try {
-    const originalTrade = await Trade.findById("6451d9740e5282a82821275a");
+// const copyTrade = async (req, res, next) => {
+//   try {
+//     const originalTrade = await Trade.findById("6451d9740e5282a82821275a");
 
-    const newTrade = new Trade({
-      ...originalTrade.toObject(),
-      _id: undefined, // to create a new document with a new _id
-      symbol: "LENOVO", // change the symbol field
-    });
+//     const newTrade = new Trade({
+//       ...originalTrade.toObject(),
+//       _id: undefined, // to create a new document with a new _id
+//       symbol: "LENOVO", // change the symbol field
+//     });
 
-    await newTrade.save();
-    console.log(newTrade);
+//     await newTrade.save();
+//     console.log(newTrade);
 
-    // res
-    //   .status(201)
-    //   .json({ message: "Trade copied successfully", trade: newTrade });
-  } catch (err) {
-    console.error(err);
-    // res.status(500).send("Server Error");
-  }
-};
+//     // res
+//     //   .status(201)
+//     //   .json({ message: "Trade copied successfully", trade: newTrade });
+//   } catch (err) {
+//     console.error(err);
+//     // res.status(500).send("Server Error");
+//   }
+// };
 
-copyTrade();
+// copyTrade();
