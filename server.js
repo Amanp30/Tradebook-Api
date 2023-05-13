@@ -17,6 +17,7 @@ const userRoutes = require("./routes/User");
 const tradeRoutes = require("./routes/Trades");
 const accountRoutes = require("./routes/Account");
 const reportRoutes = require("./routes/Reports");
+const strategyRoutes = require("./routes/Strategy");
 
 //app
 
@@ -55,6 +56,7 @@ app.use("/api", userRoutes);
 app.use("/api", tradeRoutes);
 app.use("/api", accountRoutes);
 app.use("/api", reportRoutes);
+app.use("/api", strategyRoutes);
 
 //cors
 const corsOptions = {
