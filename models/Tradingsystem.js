@@ -1,9 +1,13 @@
 const mongoose = require("mongoose");
 const crypto = require("crypto");
 
-const strategySchema = new mongoose.Schema(
+const tradingsystemSchema = new mongoose.Schema(
   {
-    strategy: {
+    tradingsystem: {
+      type: String,
+      default: "",
+    },
+    systemname: {
       type: String,
       default: "",
     },
@@ -15,4 +19,4 @@ const strategySchema = new mongoose.Schema(
   } /* , {_id : false} Do this to remove schema id */
 );
 
-module.exports = mongoose.model("Strategy", strategySchema);
+module.exports = mongoose.model("Tradingsystem", tradingsystemSchema);
