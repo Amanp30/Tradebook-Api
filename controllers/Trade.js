@@ -1,10 +1,12 @@
 const Trade = require("../models/Trade");
+const Tradingsystem = require("../models/Tradingsystem");
 const { extractFields } = require("../helpers/extractfields");
 const fs = require("fs");
+const _ = require("lodash");
+const mongoose = require("mongoose");
 const formidable = require("formidable");
 const { fileCopy } = require("../helpers/filecopy");
 const form = formidable({ multiples: true });
-const { throws } = require("assert");
 
 exports.addTrade = async (req, res) => {
   const form = formidable({ multiples: false });
@@ -67,8 +69,18 @@ exports.addTrade = async (req, res) => {
 exports.DistinctSymbols = async (req, res) => {
   const { userid } = req.params;
   try {
-    const symbols = await Trade.distinct("symbol", { user: userid });
-    return res.status(200).json({ symbols });
+    const symbols = await Trade.distinct("symbol", {
+      user: new mongoose.Types.ObjectId(userid),
+    });
+    const system = await Tradingsystem.find({
+      user: new mongoose.Types.ObjectId(userid),
+    }).select("_id systemname");
+
+    const systemIds = _.map(system, "_id");
+    const systemNames = _.map(system, "systemname");
+
+    console.log(system);
+    return res.status(200).json({ symbols, systemIds, systemNames });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Error fetching symbols." });
@@ -93,6 +105,20 @@ exports.editTrade = async (req, res) => {
     const tradeid = req.params.tradeid;
     const userid = req.params.userid;
     const trade = await Trade.find({ _id: tradeid, user: userid });
+    return res.status(200).json(trade);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Error fetching trades" });
+  }
+};
+
+exports.oneTradeview = async (req, res) => {
+  try {
+    const tradeid = req.params.tradeid;
+    const userid = req.params.userid;
+    const trade = await Trade.find({ _id: tradeid, user: userid }).populate(
+      "tradingsystem"
+    );
     return res.status(200).json(trade);
   } catch (err) {
     console.error(err);

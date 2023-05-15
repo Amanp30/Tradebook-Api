@@ -12,6 +12,14 @@ const tradeSchema = new mongoose.Schema({
     trim: true,
     // lowercase: true,
   },
+
+  tradingsystem: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Tradingsystem",
+    required: true,
+    // lowercase: true,
+  },
+
   chart: {
     type: String,
     default: "",
