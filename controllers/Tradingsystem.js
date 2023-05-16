@@ -119,6 +119,17 @@ exports.updateTradingsystem = async (req, res) => {
 exports.deleteTradingsystem = async (req, res) => {
   try {
     // Find and delete the TradingSystem object with the given userid and systemid
+
+    const userSystem = await Tradingsystem.find({
+      user: req.params.userid,
+    });
+
+    if (userSystem.length === 1) {
+      return res
+        .status(409)
+        .json({ message: "You can't delete it. One system is required" });
+    }
+
     const deletedSystem = await Tradingsystem.findOneAndDelete({
       user: req.params.userid,
       _id: req.params.systemid,

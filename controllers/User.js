@@ -1,6 +1,8 @@
 const User = require("../models/User");
+const Tradingsystem = require("../models/Tradingsystem");
 const Jwtoken = require("jsonwebtoken");
 const _ = require("lodash");
+const mongoose = require("mongoose");
 const formidable = require("formidable");
 const { extractFields } = require("../helpers/extractfields");
 const form = formidable({ multiples: true });
@@ -29,7 +31,20 @@ exports.addnew = async (req, res) => {
           password: fields.password,
         });
         const savedUser = await user.save();
-        return res.status(201).send({ success: "Account created" });
+        console.log(savedUser);
+
+        const system = new Tradingsystem({
+          systemname: "Default System",
+          tradingsystem: "<p>Edit system details</p>",
+          user: new mongoose.Types.ObjectId(savedUser._id),
+        });
+        const savedsystem = await system.save();
+
+        if (savedsystem) {
+          return res.status(201).send({ success: "Account created" });
+        } else {
+          return res.status(409).send({ message: "There are some error" });
+        }
       }
     });
   } catch (err) {
