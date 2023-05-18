@@ -100,6 +100,40 @@ exports.showtrades = async (req, res) => {
   }
 };
 
+console.log("stat her s");
+exports.paginateTrades = async (req, res) => {
+  try {
+    const userid = req.params.userid;
+    const page = parseInt(req.query.page) || 1;
+    const perPage = parseInt(req.query.per_page) || 5;
+    console.log("page " + page);
+    console.log("per page  " + perPage);
+
+    const totalTrades = await Trade.countDocuments({ user: userid });
+    const trades = await Trade.find({
+      user: new mongoose.Types.ObjectId(userid),
+    })
+      .sort({ entrydate: 1 })
+      .skip((page - 1) * perPage)
+      .limit(perPage);
+
+    const totalPages = Math.ceil(totalTrades / perPage);
+
+    const data = {
+      currentPage: page,
+      totalTrades: totalTrades,
+      totalPageCount: totalPages,
+      trades: trades,
+    };
+    // console.log(data);
+
+    res.status(200).json(data);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Error fetching trades." });
+  }
+};
+
 exports.editTrade = async (req, res) => {
   try {
     const tradeid = req.params.tradeid;

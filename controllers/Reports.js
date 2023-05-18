@@ -1846,12 +1846,12 @@ exports.calendarReport = async (req, res) => {
 
 // const copyTrade = async (req, res, next) => {
 //   try {
-//     const originalTrade = await Trade.findById("6451d9740e5282a82821275a");
+//     const originalTrade = await Trade.findById("646501721e2e66f38aede273");
 
 //     const newTrade = new Trade({
 //       ...originalTrade.toObject(),
 //       _id: undefined, // to create a new document with a new _id
-//       symbol: "LENOVO", // change the symbol field
+//       symbol: "AXISBANK", // change the symbol field
 //     });
 
 //     await newTrade.save();
