@@ -107,6 +107,17 @@ const tradesforreport = {
   },
 };
 
+const AddsortOrderIndex = function addSortOrderIndex(sortOrder) {
+  var od = {
+    $addFields: {
+      sortOrderIndex: {
+        $indexOfArray: [sortOrder, "$_id"],
+      },
+    },
+  };
+  return od;
+};
+
 const ThesortOrderIndexOne = {
   $sort: {
     sortOrderIndex: 1,
@@ -175,14 +186,52 @@ const TradesWithSymbolProfitQty = {
   },
 };
 
+const ProjectWorstTrades = {
+  $project: {
+    _id: 1,
+    worstTrades: { $slice: ["$trades", 5] },
+  },
+};
+
+const ProjectBestTrades = {
+  $project: {
+    _id: 1,
+    bestTrades: { $slice: ["$trades", 5] },
+  },
+};
+
+const AverageWinRate = {
+  $avg: {
+    $cond: [{ $gt: ["$netpnl", 0] }, 1, 0],
+  },
+};
+
+const AverageLossRate = {
+  $avg: {
+    $cond: [{ $lt: ["$netpnl", 0] }, 1, 0],
+  },
+};
+
+const AverageBreakevenRate = {
+  $avg: {
+    $cond: [{ $eq: ["$netpnl", 0] }, 1, 0],
+  },
+};
+
 module.exports = {
   holdingtimeRange,
   holdingtimearray,
   tradesforreport,
+  AddsortOrderIndex,
   ThesortOrderIndexOne,
   TheMostTradedSymbol,
   TheSymbolCounts,
   FirstBestTrade,
   LastWorstTrade,
   TradesWithSymbolProfitQty,
+  ProjectWorstTrades,
+  ProjectBestTrades,
+  AverageWinRate,
+  AverageBreakevenRate,
+  AverageLossRate,
 };

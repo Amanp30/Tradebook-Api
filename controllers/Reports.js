@@ -5,12 +5,18 @@ const {
   holdingtimeRange,
   holdingtimearray,
   tradesforreport,
+  AddsortOrderIndex,
   ThesortOrderIndexOne,
   TheMostTradedSymbol,
   TheSymbolCounts,
   FirstBestTrade,
   LastWorstTrade,
   TradesWithSymbolProfitQty,
+  ProjectWorstTrades,
+  ProjectBestTrades,
+  AverageWinRate,
+  AverageLossRate,
+  AverageBreakevenRate,
 } = require("../contollers-helpers");
 
 const sort_order = [
@@ -43,21 +49,9 @@ exports.bytimeframe = async (req, res) => {
                 symbol: { $push: "$symbol" },
                 totalPnL: { $sum: "$netpnl" },
                 totalFees: { $sum: "$fees" },
-                winRate: {
-                  $avg: {
-                    $cond: [{ $gt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                lossRate: {
-                  $avg: {
-                    $cond: [{ $lt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                breakevenRate: {
-                  $avg: {
-                    $cond: [{ $eq: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
+                winRate: AverageWinRate,
+                lossRate: AverageLossRate,
+                breakevenRate: AverageBreakevenRate,
                 maxReturnPercent: { $max: "$returnpercent" },
                 minReturnPercent: { $min: "$returnpercent" },
                 averageReturnPercent: { $avg: "$returnpercent" },
@@ -67,28 +61,10 @@ exports.bytimeframe = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [sort_order, "$_id"],
-                },
-              },
-            },
+            AddsortOrderIndex(sort_order),
             ThesortOrderIndexOne, // sort by timeframe in ascending order
             TheSymbolCounts,
             TheMostTradedSymbol,
-            // {
-            //   $match: {
-            //     "trades.profit": { $gt: 0 },
-            //   },
-            // },
-            // {
-            //   $project: {
-            //     trades: 1,
-            //     bestTrades: { $slice: ["$trades", 5] },
-            //     worstTrades: { $slice: ["$trades", -5] },
-            //   },
-            // },
           ],
           bestTrades: [
             {
@@ -104,19 +80,8 @@ exports.bytimeframe = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                bestTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [sort_order, "$_id"],
-                },
-              },
-            },
+            ProjectBestTrades,
+            AddsortOrderIndex(sort_order),
             ThesortOrderIndexOne,
           ],
           worstTrades: [
@@ -133,19 +98,8 @@ exports.bytimeframe = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                worstTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [sort_order, "$_id"],
-                },
-              },
-            },
+            ProjectWorstTrades,
+            AddsortOrderIndex(sort_order),
             ThesortOrderIndexOne,
           ],
         },
@@ -203,21 +157,9 @@ exports.bysymbol = async (req, res) => {
                 symbol: { $push: "$symbol" },
                 totalPnL: { $sum: "$netpnl" },
                 totalFees: { $sum: "$fees" },
-                winRate: {
-                  $avg: {
-                    $cond: [{ $gt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                lossRate: {
-                  $avg: {
-                    $cond: [{ $lt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                breakevenRate: {
-                  $avg: {
-                    $cond: [{ $eq: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
+                winRate: AverageWinRate,
+                lossRate: AverageLossRate,
+                breakevenRate: AverageBreakevenRate,
                 maxReturnPercent: { $max: "$returnpercent" },
                 minReturnPercent: { $min: "$returnpercent" },
                 averageReturnPercent: { $avg: "$returnpercent" },
@@ -229,13 +171,7 @@ exports.bysymbol = async (req, res) => {
               },
             },
             { $sort: { _id: 1 } },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [distinctsymbol, "$_id"],
-                },
-              },
-            },
+            AddsortOrderIndex(distinctsymbol),
             ThesortOrderIndexOne,
           ],
           bestTrades: [
@@ -252,19 +188,8 @@ exports.bysymbol = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                bestTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [distinctsymbol, "$_id"],
-                },
-              },
-            },
+            ProjectBestTrades,
+            AddsortOrderIndex(distinctsymbol),
             ThesortOrderIndexOne,
           ],
           worstTrades: [
@@ -281,19 +206,8 @@ exports.bysymbol = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                worstTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [distinctsymbol, "$_id"],
-                },
-              },
-            },
+            ProjectWorstTrades,
+            AddsortOrderIndex(distinctsymbol),
             ThesortOrderIndexOne,
           ],
         },
@@ -356,21 +270,9 @@ exports.byyearly = async (req, res) => {
                 symbol: { $push: "$symbol" },
                 totalPnL: { $sum: "$netpnl" },
                 totalFees: { $sum: "$fees" },
-                winRate: {
-                  $avg: {
-                    $cond: [{ $gt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                lossRate: {
-                  $avg: {
-                    $cond: [{ $lt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                breakevenRate: {
-                  $avg: {
-                    $cond: [{ $eq: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
+                winRate: AverageWinRate,
+                lossRate: AverageLossRate,
+                breakevenRate: AverageBreakevenRate,
                 maxReturnPercent: { $max: "$returnpercent" },
                 minReturnPercent: { $min: "$returnpercent" },
                 averageReturnPercent: { $avg: "$returnpercent" },
@@ -382,13 +284,7 @@ exports.byyearly = async (req, res) => {
               },
             },
             { $sort: { _id: 1 } },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [distinctYears, "$_id"],
-                },
-              },
-            },
+            AddsortOrderIndex(distinctYears),
             ThesortOrderIndexOne,
             TheSymbolCounts,
             TheMostTradedSymbol,
@@ -407,19 +303,8 @@ exports.byyearly = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                bestTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [distinctYears, "$_id"],
-                },
-              },
-            },
+            ProjectBestTrades,
+            AddsortOrderIndex(distinctYears),
             ThesortOrderIndexOne,
           ],
           worstTrades: [
@@ -436,19 +321,8 @@ exports.byyearly = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                worstTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [distinctYears, "$_id"],
-                },
-              },
-            },
+            ProjectWorstTrades,
+            AddsortOrderIndex(distinctYears),
             ThesortOrderIndexOne,
           ],
         },
@@ -503,21 +377,9 @@ exports.bymonthly = async (req, res) => {
                 symbol: { $push: "$symbol" },
                 totalPnL: { $sum: "$netpnl" },
                 totalFees: { $sum: "$fees" },
-                winRate: {
-                  $avg: {
-                    $cond: [{ $gt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                lossRate: {
-                  $avg: {
-                    $cond: [{ $lt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                breakevenRate: {
-                  $avg: {
-                    $cond: [{ $eq: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
+                winRate: AverageWinRate,
+                lossRate: AverageLossRate,
+                breakevenRate: AverageBreakevenRate,
                 maxReturnPercent: { $max: "$returnpercent" },
                 minReturnPercent: { $min: "$returnpercent" },
                 averageReturnPercent: { $avg: "$returnpercent" },
@@ -529,13 +391,7 @@ exports.bymonthly = async (req, res) => {
               },
             },
             { $sort: { _id: 1 } },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [monthnumbers, "$_id"],
-                },
-              },
-            },
+            AddsortOrderIndex(monthnumbers),
             ThesortOrderIndexOne,
             TheSymbolCounts,
             TheMostTradedSymbol,
@@ -554,19 +410,8 @@ exports.bymonthly = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                bestTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [monthnumbers, "$_id"],
-                },
-              },
-            },
+            ProjectBestTrades,
+            AddsortOrderIndex(monthnumbers),
             ThesortOrderIndexOne,
           ],
           worstTrades: [
@@ -583,19 +428,8 @@ exports.bymonthly = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                worstTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [monthnumbers, "$_id"],
-                },
-              },
-            },
+            ProjectWorstTrades,
+            AddsortOrderIndex(monthnumbers),
             ThesortOrderIndexOne,
           ],
         },
@@ -632,7 +466,7 @@ exports.bymonthly = async (req, res) => {
 exports.byweekdays = async (req, res) => {
   console.log(req.params.userid);
   try {
-    const monthnumbers = [1, 2, 3, 4, 5, 6, 7];
+    const WeekDays = [1, 2, 3, 4, 5, 6, 7];
 
     const pipeline = [
       {
@@ -650,21 +484,9 @@ exports.byweekdays = async (req, res) => {
                 symbol: { $push: "$symbol" },
                 totalPnL: { $sum: "$netpnl" },
                 totalFees: { $sum: "$fees" },
-                winRate: {
-                  $avg: {
-                    $cond: [{ $gt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                lossRate: {
-                  $avg: {
-                    $cond: [{ $lt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                breakevenRate: {
-                  $avg: {
-                    $cond: [{ $eq: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
+                winRate: AverageWinRate,
+                lossRate: AverageLossRate,
+                breakevenRate: AverageBreakevenRate,
                 maxReturnPercent: { $max: "$returnpercent" },
                 minReturnPercent: { $min: "$returnpercent" },
                 averageReturnPercent: { $avg: "$returnpercent" },
@@ -676,13 +498,7 @@ exports.byweekdays = async (req, res) => {
               },
             },
             { $sort: { _id: 1 } },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [monthnumbers, "$_id"],
-                },
-              },
-            },
+            AddsortOrderIndex(WeekDays),
             ThesortOrderIndexOne,
             TheSymbolCounts,
             TheMostTradedSymbol,
@@ -701,19 +517,8 @@ exports.byweekdays = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                bestTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [monthnumbers, "$_id"],
-                },
-              },
-            },
+            ProjectBestTrades,
+            AddsortOrderIndex(WeekDays),
             ThesortOrderIndexOne,
           ],
           worstTrades: [
@@ -730,19 +535,8 @@ exports.byweekdays = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                worstTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [monthnumbers, "$_id"],
-                },
-              },
-            },
+            ProjectWorstTrades,
+            AddsortOrderIndex(WeekDays),
             ThesortOrderIndexOne,
           ],
         },
@@ -779,7 +573,7 @@ exports.byweekdays = async (req, res) => {
 exports.byvolumes = async (req, res) => {
   console.log(req.params.userid);
   try {
-    const monthnumbers = [
+    const volumesOrder = [
       "0-100",
       "100-1000",
       "1K-50K",
@@ -815,21 +609,9 @@ exports.byvolumes = async (req, res) => {
                 symbol: { $push: "$symbol" },
                 totalPnL: { $sum: "$netpnl" },
                 totalFees: { $sum: "$fees" },
-                winRate: {
-                  $avg: {
-                    $cond: [{ $gt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                lossRate: {
-                  $avg: {
-                    $cond: [{ $lt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                breakevenRate: {
-                  $avg: {
-                    $cond: [{ $eq: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
+                winRate: AverageWinRate,
+                lossRate: AverageLossRate,
+                breakevenRate: AverageBreakevenRate,
                 maxReturnPercent: { $max: "$returnpercent" },
                 minReturnPercent: { $min: "$returnpercent" },
                 averageReturnPercent: { $avg: "$returnpercent" },
@@ -841,13 +623,7 @@ exports.byvolumes = async (req, res) => {
               },
             },
             { $sort: { _id: 1 } },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [monthnumbers, "$_id"],
-                },
-              },
-            },
+            AddsortOrderIndex(volumesOrder),
             ThesortOrderIndexOne,
             TheSymbolCounts,
             TheMostTradedSymbol,
@@ -871,19 +647,8 @@ exports.byvolumes = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                bestTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [monthnumbers, "$_id"],
-                },
-              },
-            },
+            ProjectBestTrades,
+            AddsortOrderIndex(volumesOrder),
             ThesortOrderIndexOne,
           ],
           worstTrades: [
@@ -905,19 +670,8 @@ exports.byvolumes = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                worstTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [monthnumbers, "$_id"],
-                },
-              },
-            },
+            ProjectWorstTrades,
+            AddsortOrderIndex(volumesOrder),
             ThesortOrderIndexOne,
           ],
         },
@@ -1001,21 +755,9 @@ exports.byhourly = async (req, res) => {
                 symbol: { $push: "$symbol" },
                 totalPnL: { $sum: "$netpnl" },
                 totalFees: { $sum: "$fees" },
-                winRate: {
-                  $avg: {
-                    $cond: [{ $gt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                lossRate: {
-                  $avg: {
-                    $cond: [{ $lt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                breakevenRate: {
-                  $avg: {
-                    $cond: [{ $eq: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
+                winRate: AverageWinRate,
+                lossRate: AverageLossRate,
+                breakevenRate: AverageBreakevenRate,
                 maxReturnPercent: { $max: "$returnpercent" },
                 minReturnPercent: { $min: "$returnpercent" },
                 averageReturnPercent: { $avg: "$returnpercent" },
@@ -1068,12 +810,7 @@ exports.byhourly = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                bestTrades: { $slice: ["$trades", 5] },
-              },
-            },
+            ProjectBestTrades,
             {
               $addFields: {
                 sortOrderIndex: {
@@ -1113,12 +850,7 @@ exports.byhourly = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                worstTrades: { $slice: ["$trades", 5] },
-              },
-            },
+            ProjectWorstTrades,
             {
               $addFields: {
                 sortOrderIndex: {
@@ -1261,21 +993,9 @@ exports.byholdingtime = async (req, res) => {
                 symbol: { $push: "$symbol" },
                 totalPnL: { $sum: "$netpnl" },
                 totalFees: { $sum: "$fees" },
-                winRate: {
-                  $avg: {
-                    $cond: [{ $gt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                lossRate: {
-                  $avg: {
-                    $cond: [{ $lt: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
-                breakevenRate: {
-                  $avg: {
-                    $cond: [{ $eq: ["$netpnl", 0] }, 1, 0],
-                  },
-                },
+                winRate: AverageWinRate,
+                lossRate: AverageLossRate,
+                breakevenRate: AverageBreakevenRate,
                 maxReturnPercent: { $max: "$returnpercent" },
                 minReturnPercent: { $min: "$returnpercent" },
                 averageReturnPercent: { $avg: "$returnpercent" },
@@ -1287,13 +1007,7 @@ exports.byholdingtime = async (req, res) => {
               },
             },
             { $sort: { _id: 1 } },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [holdingtimearray, "$_id"],
-                },
-              },
-            },
+            AddsortOrderIndex(holdingtimearray),
             ThesortOrderIndexOne,
             TheSymbolCounts,
             TheMostTradedSymbol,
@@ -1317,19 +1031,8 @@ exports.byholdingtime = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                bestTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [holdingtimearray, "$_id"],
-                },
-              },
-            },
+            ProjectBestTrades,
+            AddsortOrderIndex(holdingtimearray),
             ThesortOrderIndexOne,
           ],
           worstTrades: [
@@ -1351,19 +1054,8 @@ exports.byholdingtime = async (req, res) => {
                 trades: tradesforreport,
               },
             },
-            {
-              $project: {
-                _id: 1,
-                worstTrades: { $slice: ["$trades", 5] },
-              },
-            },
-            {
-              $addFields: {
-                sortOrderIndex: {
-                  $indexOfArray: [holdingtimearray, "$_id"],
-                },
-              },
-            },
+            ProjectWorstTrades,
+            AddsortOrderIndex(holdingtimearray),
             ThesortOrderIndexOne,
           ],
         },
