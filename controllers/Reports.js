@@ -1,8 +1,17 @@
 const mongoose = require("mongoose");
 const Trade = require("../models/Trade");
-const formidable = require("formidable");
-const form = formidable({ multiples: true });
 const _ = require("lodash");
+const {
+  holdingtimeRange,
+  holdingtimearray,
+  tradesforreport,
+  ThesortOrderIndexOne,
+  TheMostTradedSymbol,
+  TheSymbolCounts,
+  FirstBestTrade,
+  LastWorstTrade,
+  TradesWithSymbolProfitQty,
+} = require("../contollers-helpers");
 
 const sort_order = [
   "1 Minute",
@@ -53,33 +62,9 @@ exports.bytimeframe = async (req, res) => {
                 minReturnPercent: { $min: "$returnpercent" },
                 averageReturnPercent: { $avg: "$returnpercent" },
                 countTrades: { $sum: 1 },
-                bestTrade: {
-                  $first: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                worstTrade: {
-                  $last: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    returnpercent: "$returnpercent",
-                    rmultiple: "$rmultiple",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                bestTrade: FirstBestTrade,
+                worstTrade: LastWorstTrade,
+                trades: tradesforreport,
               },
             },
             {
@@ -89,49 +74,9 @@ exports.bytimeframe = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            }, // sort by timeframe in ascending order
-            {
-              $addFields: {
-                symbolCounts: {
-                  $reduce: {
-                    input: "$symbol",
-                    initialValue: {},
-                    in: {
-                      $mergeObjects: [
-                        "$$value",
-                        { $arrayToObject: [[{ k: "$$this", v: 1 }]] },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-            {
-              $addFields: {
-                mostTradedSymbol: {
-                  $let: {
-                    vars: {
-                      sortedCounts: { $objectToArray: "$symbolCounts" },
-                    },
-                    in: {
-                      $arrayElemAt: [
-                        "$$sortedCounts.k",
-                        {
-                          $indexOfArray: [
-                            "$$sortedCounts.v",
-                            { $max: "$$sortedCounts.v" },
-                          ],
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
+            ThesortOrderIndexOne, // sort by timeframe in ascending order
+            TheSymbolCounts,
+            TheMostTradedSymbol,
             // {
             //   $match: {
             //     "trades.profit": { $gt: 0 },
@@ -156,19 +101,7 @@ exports.bytimeframe = async (req, res) => {
             {
               $group: {
                 _id: "$timeframe",
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    returnpercent: "$returnpercent",
-                    rmultiple: "$rmultiple",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -184,11 +117,7 @@ exports.bytimeframe = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
           worstTrades: [
             {
@@ -201,19 +130,7 @@ exports.bytimeframe = async (req, res) => {
             {
               $group: {
                 _id: "$timeframe",
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    returnpercent: "$returnpercent",
-                    rmultiple: "$rmultiple",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -229,11 +146,7 @@ exports.bytimeframe = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
         },
       },
@@ -310,28 +223,9 @@ exports.bysymbol = async (req, res) => {
                 averageReturnPercent: { $avg: "$returnpercent" },
                 countTrades: { $sum: 1 },
 
-                bestTrade: {
-                  $first: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                worstTrade: {
-                  $last: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                  },
-                },
+                bestTrade: FirstBestTrade,
+                worstTrade: LastWorstTrade,
+                trades: TradesWithSymbolProfitQty,
               },
             },
             { $sort: { _id: 1 } },
@@ -342,11 +236,7 @@ exports.bysymbol = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
           bestTrades: [
             {
@@ -359,19 +249,7 @@ exports.bysymbol = async (req, res) => {
             {
               $group: {
                 _id: "$symbol",
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    returnpercent: "$returnpercent",
-                    rmultiple: "$rmultiple",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -387,11 +265,7 @@ exports.bysymbol = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
           worstTrades: [
             {
@@ -404,19 +278,7 @@ exports.bysymbol = async (req, res) => {
             {
               $group: {
                 _id: "$symbol",
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    returnpercent: "$returnpercent",
-                    rmultiple: "$rmultiple",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -432,11 +294,7 @@ exports.bysymbol = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
         },
       },
@@ -518,28 +376,9 @@ exports.byyearly = async (req, res) => {
                 averageReturnPercent: { $avg: "$returnpercent" },
                 countTrades: { $sum: 1 },
 
-                bestTrade: {
-                  $first: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                worstTrade: {
-                  $last: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                  },
-                },
+                bestTrade: FirstBestTrade,
+                worstTrade: LastWorstTrade,
+                trades: TradesWithSymbolProfitQty,
               },
             },
             { $sort: { _id: 1 } },
@@ -550,49 +389,9 @@ exports.byyearly = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
-            {
-              $addFields: {
-                symbolCounts: {
-                  $reduce: {
-                    input: "$symbol",
-                    initialValue: {},
-                    in: {
-                      $mergeObjects: [
-                        "$$value",
-                        { $arrayToObject: [[{ k: "$$this", v: 1 }]] },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-            {
-              $addFields: {
-                mostTradedSymbol: {
-                  $let: {
-                    vars: {
-                      sortedCounts: { $objectToArray: "$symbolCounts" },
-                    },
-                    in: {
-                      $arrayElemAt: [
-                        "$$sortedCounts.k",
-                        {
-                          $indexOfArray: [
-                            "$$sortedCounts.v",
-                            { $max: "$$sortedCounts.v" },
-                          ],
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
+            ThesortOrderIndexOne,
+            TheSymbolCounts,
+            TheMostTradedSymbol,
           ],
           bestTrades: [
             {
@@ -605,20 +404,7 @@ exports.byyearly = async (req, res) => {
             {
               $group: {
                 _id: { $year: "$entrydate" },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    rmultiple: "$rmultiple",
-                    returnpercent: "$returnpercent",
-                    entrydate: "$entrydate",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -634,11 +420,7 @@ exports.byyearly = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
           worstTrades: [
             {
@@ -651,20 +433,7 @@ exports.byyearly = async (req, res) => {
             {
               $group: {
                 _id: { $year: "$entrydate" },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    returnpercent: "$returnpercent",
-                    entrydate: "$entrydate",
-                    rmultiple: "$rmultiple",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -680,11 +449,7 @@ exports.byyearly = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
         },
       },
@@ -758,28 +523,9 @@ exports.bymonthly = async (req, res) => {
                 averageReturnPercent: { $avg: "$returnpercent" },
                 countTrades: { $sum: 1 },
 
-                bestTrade: {
-                  $first: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                worstTrade: {
-                  $last: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                  },
-                },
+                bestTrade: FirstBestTrade,
+                worstTrade: LastWorstTrade,
+                trades: TradesWithSymbolProfitQty,
               },
             },
             { $sort: { _id: 1 } },
@@ -790,49 +536,9 @@ exports.bymonthly = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
-            {
-              $addFields: {
-                symbolCounts: {
-                  $reduce: {
-                    input: "$symbol",
-                    initialValue: {},
-                    in: {
-                      $mergeObjects: [
-                        "$$value",
-                        { $arrayToObject: [[{ k: "$$this", v: 1 }]] },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-            {
-              $addFields: {
-                mostTradedSymbol: {
-                  $let: {
-                    vars: {
-                      sortedCounts: { $objectToArray: "$symbolCounts" },
-                    },
-                    in: {
-                      $arrayElemAt: [
-                        "$$sortedCounts.k",
-                        {
-                          $indexOfArray: [
-                            "$$sortedCounts.v",
-                            { $max: "$$sortedCounts.v" },
-                          ],
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
+            ThesortOrderIndexOne,
+            TheSymbolCounts,
+            TheMostTradedSymbol,
           ],
           bestTrades: [
             {
@@ -845,20 +551,7 @@ exports.bymonthly = async (req, res) => {
             {
               $group: {
                 _id: { $month: "$entrydate" },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    rmultiple: "$rmultiple",
-                    returnpercent: "$returnpercent",
-                    entrydate: "$entrydate",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -874,11 +567,7 @@ exports.bymonthly = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
           worstTrades: [
             {
@@ -891,20 +580,7 @@ exports.bymonthly = async (req, res) => {
             {
               $group: {
                 _id: { $month: "$entrydate" },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    returnpercent: "$returnpercent",
-                    entrydate: "$entrydate",
-                    rmultiple: "$rmultiple",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -920,11 +596,7 @@ exports.bymonthly = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
         },
       },
@@ -998,28 +670,9 @@ exports.byweekdays = async (req, res) => {
                 averageReturnPercent: { $avg: "$returnpercent" },
                 countTrades: { $sum: 1 },
 
-                bestTrade: {
-                  $first: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                worstTrade: {
-                  $last: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                  },
-                },
+                bestTrade: FirstBestTrade,
+                worstTrade: LastWorstTrade,
+                trades: TradesWithSymbolProfitQty,
               },
             },
             { $sort: { _id: 1 } },
@@ -1030,49 +683,9 @@ exports.byweekdays = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
-            {
-              $addFields: {
-                symbolCounts: {
-                  $reduce: {
-                    input: "$symbol",
-                    initialValue: {},
-                    in: {
-                      $mergeObjects: [
-                        "$$value",
-                        { $arrayToObject: [[{ k: "$$this", v: 1 }]] },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-            {
-              $addFields: {
-                mostTradedSymbol: {
-                  $let: {
-                    vars: {
-                      sortedCounts: { $objectToArray: "$symbolCounts" },
-                    },
-                    in: {
-                      $arrayElemAt: [
-                        "$$sortedCounts.k",
-                        {
-                          $indexOfArray: [
-                            "$$sortedCounts.v",
-                            { $max: "$$sortedCounts.v" },
-                          ],
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
+            ThesortOrderIndexOne,
+            TheSymbolCounts,
+            TheMostTradedSymbol,
           ],
           bestTrades: [
             {
@@ -1085,20 +698,7 @@ exports.byweekdays = async (req, res) => {
             {
               $group: {
                 _id: { $dayOfWeek: "$entrydate" },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    rmultiple: "$rmultiple",
-                    returnpercent: "$returnpercent",
-                    entrydate: "$entrydate",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -1114,11 +714,7 @@ exports.byweekdays = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
           worstTrades: [
             {
@@ -1131,20 +727,7 @@ exports.byweekdays = async (req, res) => {
             {
               $group: {
                 _id: { $dayOfWeek: "$entrydate" },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    returnpercent: "$returnpercent",
-                    entrydate: "$entrydate",
-                    rmultiple: "$rmultiple",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -1160,11 +743,7 @@ exports.byweekdays = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
         },
       },
@@ -1256,28 +835,9 @@ exports.byvolumes = async (req, res) => {
                 averageReturnPercent: { $avg: "$returnpercent" },
                 countTrades: { $sum: 1 },
 
-                bestTrade: {
-                  $first: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                worstTrade: {
-                  $last: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                  },
-                },
+                bestTrade: FirstBestTrade,
+                worstTrade: LastWorstTrade,
+                trades: TradesWithSymbolProfitQty,
               },
             },
             { $sort: { _id: 1 } },
@@ -1288,49 +848,9 @@ exports.byvolumes = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
-            {
-              $addFields: {
-                symbolCounts: {
-                  $reduce: {
-                    input: "$symbol",
-                    initialValue: {},
-                    in: {
-                      $mergeObjects: [
-                        "$$value",
-                        { $arrayToObject: [[{ k: "$$this", v: 1 }]] },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-            {
-              $addFields: {
-                mostTradedSymbol: {
-                  $let: {
-                    vars: {
-                      sortedCounts: { $objectToArray: "$symbolCounts" },
-                    },
-                    in: {
-                      $arrayElemAt: [
-                        "$$sortedCounts.k",
-                        {
-                          $indexOfArray: [
-                            "$$sortedCounts.v",
-                            { $max: "$$sortedCounts.v" },
-                          ],
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
+            ThesortOrderIndexOne,
+            TheSymbolCounts,
+            TheMostTradedSymbol,
           ],
           bestTrades: [
             {
@@ -1348,20 +868,7 @@ exports.byvolumes = async (req, res) => {
                     default: "Unknown",
                   },
                 },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    rmultiple: "$rmultiple",
-                    returnpercent: "$returnpercent",
-                    entrydate: "$entrydate",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -1377,11 +884,7 @@ exports.byvolumes = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
           worstTrades: [
             {
@@ -1399,20 +902,7 @@ exports.byvolumes = async (req, res) => {
                     default: "Unknown",
                   },
                 },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    returnpercent: "$returnpercent",
-                    entrydate: "$entrydate",
-                    rmultiple: "$rmultiple",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -1428,11 +918,7 @@ exports.byvolumes = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
         },
       },
@@ -1535,28 +1021,9 @@ exports.byhourly = async (req, res) => {
                 averageReturnPercent: { $avg: "$returnpercent" },
                 countTrades: { $sum: 1 },
 
-                bestTrade: {
-                  $first: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                worstTrade: {
-                  $last: {
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    returnpercent: "$returnpercent",
-                  },
-                },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                  },
-                },
+                bestTrade: FirstBestTrade,
+                worstTrade: LastWorstTrade,
+                trades: TradesWithSymbolProfitQty,
               },
             },
             { $sort: { _id: 1 } },
@@ -1567,49 +1034,9 @@ exports.byhourly = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
-            {
-              $addFields: {
-                symbolCounts: {
-                  $reduce: {
-                    input: "$symbol",
-                    initialValue: {},
-                    in: {
-                      $mergeObjects: [
-                        "$$value",
-                        { $arrayToObject: [[{ k: "$$this", v: 1 }]] },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-            {
-              $addFields: {
-                mostTradedSymbol: {
-                  $let: {
-                    vars: {
-                      sortedCounts: { $objectToArray: "$symbolCounts" },
-                    },
-                    in: {
-                      $arrayElemAt: [
-                        "$$sortedCounts.k",
-                        {
-                          $indexOfArray: [
-                            "$$sortedCounts.v",
-                            { $max: "$$sortedCounts.v" },
-                          ],
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
+            ThesortOrderIndexOne,
+            TheSymbolCounts,
+            TheMostTradedSymbol,
           ],
           bestTrades: [
             {
@@ -1638,20 +1065,7 @@ exports.byhourly = async (req, res) => {
                     },
                   ],
                 },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    rmultiple: "$rmultiple",
-                    returnpercent: "$returnpercent",
-                    entrydate: "$entrydate",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -1667,11 +1081,7 @@ exports.byhourly = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
           worstTrades: [
             {
@@ -1700,20 +1110,7 @@ exports.byhourly = async (req, res) => {
                     },
                   ],
                 },
-                trades: {
-                  $push: {
-                    _id: "$_id",
-                    symbol: "$symbol",
-                    profit: "$profit",
-                    quantity: "$quantity",
-                    action: "$action",
-                    returnpercent: "$returnpercent",
-                    entrydate: "$entrydate",
-                    rmultiple: "$rmultiple",
-                    rrrplanned: "$rrrplanned",
-                    netpnl: "$netpnl",
-                  },
-                },
+                trades: tradesforreport,
               },
             },
             {
@@ -1729,11 +1126,7 @@ exports.byhourly = async (req, res) => {
                 },
               },
             },
-            {
-              $sort: {
-                sortOrderIndex: 1,
-              },
-            },
+            ThesortOrderIndexOne,
           ],
         },
       },
@@ -1842,6 +1235,166 @@ exports.calendarReport = async (req, res) => {
   };
 
   res.json(response);
+};
+
+exports.byholdingtime = async (req, res) => {
+  console.log(req.params.userid);
+  try {
+    const pipeline = [
+      {
+        $facet: {
+          data: [
+            {
+              $match: {
+                user: new mongoose.Types.ObjectId(req.params.userid),
+              },
+            },
+            { $sort: { returnpercent: -1, profit: -1, symbol: 1 } },
+            {
+              $group: {
+                _id: {
+                  $switch: {
+                    branches: holdingtimeRange,
+                    default: "Unknown",
+                  },
+                },
+                symbol: { $push: "$symbol" },
+                totalPnL: { $sum: "$netpnl" },
+                totalFees: { $sum: "$fees" },
+                winRate: {
+                  $avg: {
+                    $cond: [{ $gt: ["$netpnl", 0] }, 1, 0],
+                  },
+                },
+                lossRate: {
+                  $avg: {
+                    $cond: [{ $lt: ["$netpnl", 0] }, 1, 0],
+                  },
+                },
+                breakevenRate: {
+                  $avg: {
+                    $cond: [{ $eq: ["$netpnl", 0] }, 1, 0],
+                  },
+                },
+                maxReturnPercent: { $max: "$returnpercent" },
+                minReturnPercent: { $min: "$returnpercent" },
+                averageReturnPercent: { $avg: "$returnpercent" },
+                countTrades: { $sum: 1 },
+
+                bestTrade: FirstBestTrade,
+                worstTrade: LastWorstTrade,
+                trades: TradesWithSymbolProfitQty,
+              },
+            },
+            { $sort: { _id: 1 } },
+            {
+              $addFields: {
+                sortOrderIndex: {
+                  $indexOfArray: [holdingtimearray, "$_id"],
+                },
+              },
+            },
+            ThesortOrderIndexOne,
+            TheSymbolCounts,
+            TheMostTradedSymbol,
+          ],
+          bestTrades: [
+            {
+              $match: {
+                user: new mongoose.Types.ObjectId(req.params.userid),
+                outcome: "Win",
+              },
+            },
+            { $sort: { returnpercent: -1, profit: -1, quantity: -1 } },
+            {
+              $group: {
+                _id: {
+                  $switch: {
+                    branches: holdingtimeRange,
+                    default: "Unknown",
+                  },
+                },
+                trades: tradesforreport,
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                bestTrades: { $slice: ["$trades", 5] },
+              },
+            },
+            {
+              $addFields: {
+                sortOrderIndex: {
+                  $indexOfArray: [holdingtimearray, "$_id"],
+                },
+              },
+            },
+            ThesortOrderIndexOne,
+          ],
+          worstTrades: [
+            {
+              $match: {
+                user: new mongoose.Types.ObjectId(req.params.userid),
+                outcome: "Loss",
+              },
+            },
+            { $sort: { returnpercent: 1, profit: 1 } },
+            {
+              $group: {
+                _id: {
+                  $switch: {
+                    branches: holdingtimeRange,
+                    default: "Unknown",
+                  },
+                },
+                trades: tradesforreport,
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                worstTrades: { $slice: ["$trades", 5] },
+              },
+            },
+            {
+              $addFields: {
+                sortOrderIndex: {
+                  $indexOfArray: [holdingtimearray, "$_id"],
+                },
+              },
+            },
+            ThesortOrderIndexOne,
+          ],
+        },
+      },
+    ];
+
+    const result = await Trade.aggregate(pipeline); // perform aggregation
+    const data = result[0].data || []; // get data array from aggregation result or use empty array as default
+
+    const pnlArray = data.map((d) => d.totalPnL);
+    const orderIndex = data.map((d) => d.sortOrderIndex);
+    const averageReturnPercent = data.map((d) => d.averageReturnPercent);
+    const labels = data.map((d) => d._id);
+    const tradecount = data.map((d) => d.countTrades);
+
+    const response = {
+      data,
+      bestTrades: result[0].bestTrades,
+      worstTrades: result[0].worstTrades,
+      orderIndex,
+      pnlArray,
+      averageReturnPercent,
+      labels,
+      tradecount,
+    };
+
+    res.json(response); // send response as JSON
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" }); // send error response with status code 500
+  }
 };
 
 // const copyTrade = async (req, res, next) => {

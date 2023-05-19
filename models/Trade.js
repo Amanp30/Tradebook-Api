@@ -124,7 +124,7 @@ const tradeSchema = new mongoose.Schema({
     required: true,
   },
   holdingperiod: {
-    type: String,
+    type: Number,
     required: true,
   },
 });
