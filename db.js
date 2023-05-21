@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
+const { DATABASEURI, NODE_ENV } = require("./configvar");
 
 const localuri = "mongodb://0.0.0.0:27017/tradeapp";
-const databaseuri = process.env.DATABASE;
 
 //database
 mongoose
-  .connect(process.env.NODE_ENV !== "production" ? localuri : databaseuri, {
+  .connect(NODE_ENV !== "production" ? localuri : DATABASEURI, {
     useNewUrlParser: true,
   })
   .then(() => console.log("MongoDB connected..."))
