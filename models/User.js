@@ -1,46 +1,43 @@
 const mongoose = require("mongoose");
 const crypto = require("crypto");
 
-const userSchema = new mongoose.Schema(
-  {
-    firstname: {
-      type: String,
-      require: true,
-      default: "",
-    },
-    lastname: {
-      type: String,
-      require: true,
-      default: "",
-    },
-    email: {
-      type: "String",
-      lowerCase: true,
-    },
-    state: {
-      type: String,
-      default: "",
-    },
-    mobileno: {
-      type: String,
-      default: "",
-    },
-    broker: { type: String, default: "" },
-    hashed_password: {
-      type: "String",
-    },
-    salt: "String",
-    resetPasswordLink: {
-      type: String,
-      default: "",
-    },
+const schema = {
+  firstname: {
+    type: String,
+    require: true,
+    default: "",
   },
-  {
-    timestamps: true, // Add this line to enable timestamps
-  }
+  lastname: {
+    type: String,
+    require: true,
+    default: "",
+  },
+  email: {
+    type: "String",
+    lowerCase: true,
+  },
+  state: {
+    type: String,
+    default: "",
+  },
+  mobileno: {
+    type: String,
+    default: "",
+  },
+  broker: { type: String, default: "" },
+  hashed_password: {
+    type: "String",
+  },
+  salt: "String",
+  resetPasswordLink: {
+    type: String,
+    default: "",
+  },
+};
 
-  /* , {_id : false} Do this to remove schema id */
-);
+const userSchema = new mongoose.Schema(schema, {
+  timestamps: true, // Add this line to enable timestamps
+});
 
 userSchema
   .virtual("password")
