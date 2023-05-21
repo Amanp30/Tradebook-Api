@@ -16,7 +16,12 @@ const tradingsystemSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-  } /* , {_id : false} Do this to remove schema id */
+  },
+  {
+    timestamps: true, // Add this line to enable timestamps
+  }
 );
+
+/* , {_id : false} Do this to remove schema id */
 
 module.exports = mongoose.model("Tradingsystem", tradingsystemSchema);
