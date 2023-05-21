@@ -1,5 +1,7 @@
+const { NODE_ENV } = require("../configvar");
+
 const Allowedurl =
-  process.env.NODE_ENV !== "production"
+  NODE_ENV !== "production"
     ? "http://localhost:3000"
     : "https://testing-react-js-xi.vercel.app";
 
