@@ -8,7 +8,7 @@ const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 9000;
 const Allowedurl =
-  process.env.NODE_ENV === "developement"
+  process.env.NODE_ENV !== "production"
     ? "http://localhost:3000"
     : "https://testing-react-js-xi.vercel.app";
 
@@ -31,7 +31,7 @@ const databaseuri = process.env.DATABASE;
 
 //database
 mongoose
-  .connect(process.env.NODE_ENV === "developement" ? localuri : databaseuri, {
+  .connect(process.env.NODE_ENV !== "production" ? localuri : databaseuri, {
     useNewUrlParser: true,
   })
   .then(() => console.log("MongoDB connected..."))
@@ -73,7 +73,6 @@ app.use("/api", tradingsystemRoutes);
 
 //cors
 const corsOptions = {
-  // origin: "http://localhost:3000", // set your desired origins or allow any origin with *
   origin: Allowedurl, // set your desired origins or allow any origin with *
   credentials: true, //access-control-allow-credentials:true
   optionSuccessStatus: 200,
