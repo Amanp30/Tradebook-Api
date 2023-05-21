@@ -18,6 +18,7 @@ const tradeRoutes = require("./routes/Trades");
 const accountRoutes = require("./routes/Account");
 const reportRoutes = require("./routes/Reports");
 const tradingsystemRoutes = require("./routes/Tradingsystem");
+const { requireSignin } = require("./validators/jwtvalidator");
 
 //app
 
@@ -25,9 +26,12 @@ const app = express();
 
 app.use("/uploads", express.static("uploads"));
 
+const localuri = "mongodb://0.0.0.0:27017/tradeapp";
+const databaseuri = process.env.DATABASE;
+
 //database
 mongoose
-  .connect(process.env.DATABASE, {
+  .connect(process.env.NODE_ENV === "developement" ? localuri : databaseuri, {
     useNewUrlParser: true,
   })
   .then(() => console.log("MongoDB connected..."))
@@ -50,6 +54,15 @@ app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Credentials", "true");
   next();
 });
+
+// app.use(requireSignin, {
+//   unless: [
+//     "/user/forgotpassword",
+//     "/user/reset/:link",
+//     "/user/login",
+//     "/user/signup",
+//   ],
+// });
 
 //route middlewares
 app.use("/api", userRoutes);
