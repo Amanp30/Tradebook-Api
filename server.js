@@ -1,16 +1,17 @@
 const db = require("./db");
-const express = require("express");
-const morgan = require("morgan");
-const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
-const cors = require("cors");
-require("dotenv").config();
+const { APP_PORT } = require("./configvar");
 const {
   corsOptions,
   crossOriginResourceSharing,
   handleNotFound,
 } = require("./helpers/essentialfunc");
-const port = process.env.PORT || 9000;
+const express = require("express");
+const morgan = require("morgan");
+const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+
+const port = APP_PORT || 9000;
 
 //bringing router
 const userRoutes = require("./routes/User");

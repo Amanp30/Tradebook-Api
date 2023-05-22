@@ -1,9 +1,9 @@
-const { NODE_ENV } = require("../configvar");
+const { NODE_ENV, DEV_CLIENT_URL, PROD_CLIENT_URL } = require("../configvar");
 
 const Allowedurl =
   NODE_ENV !== "production"
-    ? "http://localhost:3000"
-    : "https://testing-react-js-xi.vercel.app";
+    ? DEV_CLIENT_URL
+    : PROD_CLIENT_URL;
 
 exports.corsOptions = {
   origin: Allowedurl, // set your desired origins or allow any origin with *
