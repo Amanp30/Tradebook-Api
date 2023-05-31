@@ -355,3 +355,361 @@ exports.updateNote = async (req, res) => {
     }
   });
 };
+
+exports.dashboardtradesreport = async (req, res) => {
+  const { userid } = req.params;
+
+  try {
+    const pipeline = [
+      {
+        $facet: {
+          topmonth: [
+            {
+              $match: {
+                user: new mongoose.Types.ObjectId(userid),
+              },
+            },
+            {
+              $sort: {
+                profit: -1,
+              },
+            },
+            {
+              $group: {
+                _id: {
+                  $month: {
+                    date: "$entrydate",
+                  },
+                },
+                tradecount: {
+                  $sum: 1,
+                },
+                avgreturnpercent: {
+                  $avg: "$returnpercent",
+                },
+                winCount: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $gt: ["$netpnl", 0],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                lossCount: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $lt: ["$netpnl", 0],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                totalnetpnl: {
+                  $sum: "$netpnl",
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                data: 1,
+                tradecount: 1,
+                avgreturnpercent: 1,
+                winRate: {
+                  $multiply: [
+                    {
+                      $divide: ["$winCount", "$tradecount"],
+                    },
+                    100,
+                  ],
+                },
+                lossRate: {
+                  $multiply: [
+                    {
+                      $divide: ["$lossCount", "$tradecount"],
+                    },
+                    100,
+                  ],
+                },
+                totalnetpnl: 1,
+              },
+            },
+            {
+              $sort: {
+                totalnetpnl: -1,
+              },
+            },
+            {
+              $limit: 5,
+            },
+          ],
+          topyear: [
+            {
+              $match: {
+                user: new mongoose.Types.ObjectId(userid),
+              },
+            },
+            {
+              $sort: {
+                profit: -1,
+              },
+            },
+            {
+              $group: {
+                _id: {
+                  $dateToString: {
+                    format: "%Y",
+                    date: "$entrydate",
+                  },
+                },
+                tradecount: {
+                  $sum: 1,
+                },
+                avgreturnpercent: {
+                  $avg: "$returnpercent",
+                },
+                winCount: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $gt: ["$netpnl", 0],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                lossCount: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $lt: ["$netpnl", 0],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                totalnetpnl: {
+                  $sum: "$netpnl",
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                data: 1,
+                tradecount: 1,
+                avgreturnpercent: 1,
+                winRate: {
+                  $multiply: [
+                    {
+                      $divide: ["$winCount", "$tradecount"],
+                    },
+                    100,
+                  ],
+                },
+                lossRate: {
+                  $multiply: [
+                    {
+                      $divide: ["$lossCount", "$tradecount"],
+                    },
+                    100,
+                  ],
+                },
+                totalnetpnl: 1,
+              },
+            },
+            {
+              $sort: {
+                totalnetpnl: -1,
+              },
+            },
+            {
+              $limit: 5,
+            },
+          ],
+          topweekday: [
+            {
+              $match: {
+                user: new mongoose.Types.ObjectId(userid),
+              },
+            },
+            {
+              $sort: {
+                profit: -1,
+              },
+            },
+            {
+              $group: {
+                _id: {
+                  $dateToString: {
+                    format: "%w",
+                    date: "$entrydate",
+                  },
+                },
+                tradecount: {
+                  $sum: 1,
+                },
+                avgreturnpercent: {
+                  $avg: "$returnpercent",
+                },
+                winCount: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $gt: ["$netpnl", 0],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                lossCount: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $lt: ["$netpnl", 0],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                totalnetpnl: {
+                  $sum: "$netpnl",
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                data: 1,
+                tradecount: 1,
+                avgreturnpercent: 1,
+                winRate: {
+                  $multiply: [
+                    {
+                      $divide: ["$winCount", "$tradecount"],
+                    },
+                    100,
+                  ],
+                },
+                lossRate: {
+                  $multiply: [
+                    {
+                      $divide: ["$lossCount", "$tradecount"],
+                    },
+                    100,
+                  ],
+                },
+                totalnetpnl: 1,
+              },
+            },
+            {
+              $sort: {
+                totalnetpnl: -1,
+              },
+            },
+            {
+              $limit: 5,
+            },
+          ],
+          topsymbol: [
+            {
+              $match: {
+                user: new mongoose.Types.ObjectId(userid),
+              },
+            },
+            {
+              $sort: {
+                profit: -1,
+              },
+            },
+            {
+              $group: {
+                _id: "$symbol",
+                tradecount: {
+                  $sum: 1,
+                },
+                avgreturnpercent: {
+                  $avg: "$returnpercent",
+                },
+                winCount: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $gt: ["$netpnl", 0],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                lossCount: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $lt: ["$netpnl", 0],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                totalnetpnl: {
+                  $sum: "$netpnl",
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                data: 1,
+                tradecount: 1,
+                avgreturnpercent: 1,
+                winRate: {
+                  $multiply: [
+                    {
+                      $divide: ["$winCount", "$tradecount"],
+                    },
+                    100,
+                  ],
+                },
+                lossRate: {
+                  $multiply: [
+                    {
+                      $divide: ["$lossCount", "$tradecount"],
+                    },
+                    100,
+                  ],
+                },
+                totalnetpnl: 1,
+              },
+            },
+            {
+              $sort: {
+                totalnetpnl: -1,
+              },
+            },
+            {
+              $limit: 5,
+            },
+          ],
+        },
+      },
+    ];
+
+    const result = await Trade.aggregate(pipeline); // perform aggregation
+
+    res.json(result[0]);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send(error);
+  }
+};

@@ -12,10 +12,17 @@ const {
   updateNote,
   oneTradeview,
   paginateTrades,
+  dashboardtradesreport,
 } = require("../controllers/Trade");
 const { requireSignin } = require("../validators/jwtvalidator");
 
 const router = express.Router();
+
+router.get(
+  "/trade/dashboardreports/:userid",
+  requireSignin,
+  dashboardtradesreport
+);
 
 router.post("/trade/add", requireSignin, addTrade);
 router.post("/trade/update/:tradeid", requireSignin, updateTrade);
