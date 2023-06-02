@@ -701,6 +701,22 @@ exports.dashboardtradesreport = async (req, res) => {
               $limit: 5,
             },
           ],
+          chartdata: [
+            {
+              $match: {
+                user: new mongoose.Types.ObjectId(userid),
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                profitarray: { $push: "$profit" },
+                netpnlarray: { $push: "$netpnl" },
+                symbols: { $push: "$symbol" },
+                sumprofit: { $sum: "$profit" },
+              },
+            },
+          ],
         },
       },
     ];
