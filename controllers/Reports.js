@@ -911,16 +911,13 @@ exports.calendarReport = async (req, res) => {
         _id: { $dateToString: { format: "%Y-%m-%d", date: "$entrydate" } },
         profitinrs: { $sum: "$profit" },
         fees: { $sum: "$fees" },
+        netpnl: { $sum: "$netpnl" },
         tradecount: { $sum: 1 },
-        winRate: {
-          $avg: {
-            $cond: [{ $gt: ["$netpnl", 0] }, 1, 0],
-          },
+        winCount: {
+          $sum: { $cond: [{ $gt: ["$netpnl", 0] }, 1, 0] },
         },
-        lossRate: {
-          $avg: {
-            $cond: [{ $lt: ["$netpnl", 0] }, 1, 0],
-          },
+        lossCount: {
+          $sum: { $cond: [{ $lt: ["$netpnl", 0] }, 1, 0] },
         },
         trades: {
           $push: {
@@ -940,30 +937,77 @@ exports.calendarReport = async (req, res) => {
         },
       },
     },
+    {
+      $addFields: {
+        winRate: {
+          $multiply: [{ $divide: ["$winCount", "$tradecount"] }, 100],
+        },
+        lossRate: {
+          $multiply: [{ $divide: ["$lossCount", "$tradecount"] }, 100],
+        },
+      },
+    },
+    {
+      $facet: {
+        summary: [
+          {
+            $group: {
+              _id: null,
+              totalProfit: { $sum: "$profitinrs" },
+              totalFees: { $sum: "$fees" },
+              totalNetPnl: { $sum: "$netpnl" },
+              totalTrades: { $sum: "$tradecount" },
+              averageWinRate: { $avg: "$winRate" },
+              averageLossRate: { $avg: "$lossRate" },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              totalProfit: 1,
+              totalFees: 1,
+              totalNetPnl: 1,
+              totalTrades: 1,
+              averageWinRate: { $round: ["$averageWinRate", 2] },
+              averageLossRate: { $round: ["$averageLossRate", 2] },
+              // averageWinRate: { $round: ["$averageWinRate", 2] },
+              // averageLossRate: { $round: ["$averageLossRate", 2] },
+            },
+          },
+        ],
+        trades: [
+          {
+            $project: {
+              _id: "$_id",
+              // date: "",
+              profitinrs: 1,
+              fees: 1,
+              netpnl: 1,
+              tradecount: 1,
+              winRate: 1,
+              lossRate: 1,
+              trades: 1,
+            },
+          },
+        ],
+      },
+    },
   ];
 
   var result = await Trade.aggregate(pipeline);
 
-  const totalfeespaid = _.sumBy(result, "fees");
-  const totalprofit = _.sumBy(result, "profitinrs");
-  const thenetpnl = totalprofit - totalfeespaid;
-  const tradestaken = _.sumBy(result, "tradecount");
+  // console.log(result[0].trades);
 
-  const numTrades = result.length;
-  const numWins = _.sumBy(result, (trade) => trade.profitinrs > 0);
-  const numLosses = _.sumBy(result, (trade) => trade.profitinrs < 0);
+  const numTrades = result[0].trades.length;
+  const numWins = _.sumBy(result[0].trades, (trade) => trade.profitinrs > 0);
+  const numLosses = _.sumBy(result[0].trades, (trade) => trade.profitinrs < 0);
+  console.log(numWins);
 
   const winRate = ((numWins / numTrades) * 100).toFixed(0);
   const lossRate = ((numLosses / numTrades) * 100).toFixed(0);
 
   const response = {
     result,
-    winRate,
-    lossRate,
-    totalfeespaid,
-    totalprofit,
-    thenetpnl,
-    tradestaken,
   };
 
   res.json(response);

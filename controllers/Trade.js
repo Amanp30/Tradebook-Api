@@ -8,6 +8,8 @@ const formidable = require("formidable");
 const { fileCopy } = require("../helpers/filecopy");
 const form = formidable({ multiples: true });
 
+console.log(Trade);
+
 exports.addTrade = async (req, res) => {
   const form = formidable({ multiples: false });
 
@@ -28,17 +30,16 @@ exports.addTrade = async (req, res) => {
 
       var isSaved = await fileCopy(oldPath, newPath);
       if (isSaved) {
-        // Create a new Trade instance
-        const newTrade = new Trade({
-          ...fields,
-          chart: filename,
-        });
-
-        // Save the Trade to the database
         try {
+          const newTrade = new Trade({
+            ...fields,
+            chart: filename,
+          });
+          await newTrade.validate(); // Validate the trade object
+
           newTrade.save();
           return res.status(201).json({
-            message: "Trade added successfully.f",
+            message: "Trade added successfully.",
             data: newTrade,
           });
         } catch (err) {
@@ -47,20 +48,31 @@ exports.addTrade = async (req, res) => {
         }
       }
     } else {
-      const newTrade = new Trade({
-        ...fields,
-      });
-
-      // Save the Trade to the database
       try {
+        const newTrade = new Trade({
+          ...fields,
+        });
+
+        await newTrade.validate(); // Validate the trade object
+
         newTrade.save();
         return res.status(201).json({
           message: "Trade added successfully.",
           data: newTrade,
         });
-      } catch (err) {
-        console.error(err);
-        return res.status(500).json({ message: "Error saving trade." });
+      } catch (error) {
+        if (error.name === "ValidationError") {
+          // Handle validation errors
+          const validationErrors = Object.values(error.errors).map((error) => {
+            return error.message;
+          });
+
+          return res.status(409).json({ message: validationErrors });
+        } else {
+          // Handle other Mongoose errors
+          // console.error(error);
+          return res.status(500).json({ message: "Error saving trade." });
+        }
       }
     }
   });
@@ -563,7 +575,7 @@ exports.dashboardtradesreport = async (req, res) => {
                   $sum: {
                     $cond: [
                       {
-                        $gt: ["$netpnl", 0],
+                        $gte: ["$netpnl", 0],
                       },
                       1,
                       0,
@@ -713,7 +725,9 @@ exports.dashboardtradesreport = async (req, res) => {
                 profitarray: { $push: "$profit" },
                 netpnlarray: { $push: "$netpnl" },
                 symbols: { $push: "$symbol" },
-                sumprofit: { $sum: "$profit" },
+                totalprofit: { $sum: "$profit" },
+                totalfeespaid: { $sum: "$fees" },
+                totalnetpnl: { $sum: "$netpnl" },
               },
             },
           ],

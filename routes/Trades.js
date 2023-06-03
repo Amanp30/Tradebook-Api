@@ -15,6 +15,8 @@ const {
   dashboardtradesreport,
 } = require("../controllers/Trade");
 const { requireSignin } = require("../validators/jwtvalidator");
+const { tradeValidator } = require("../validators/tradeValidate");
+const { runValidation } = require("../validators/index");
 
 const router = express.Router();
 
@@ -24,7 +26,13 @@ router.get(
   dashboardtradesreport
 );
 
-router.post("/trade/add", requireSignin, addTrade);
+router.post(
+  "/trade/add",
+  // tradeValidator,
+  // runValidation,
+  requireSignin,
+  addTrade
+);
 router.post("/trade/update/:tradeid", requireSignin, updateTrade);
 router.post("/trade/nameupdate/:userid", requireSignin, saveNewNamesofSymbols);
 

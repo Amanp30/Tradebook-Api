@@ -57,7 +57,14 @@ const schema = {
   },
   quantity: {
     type: Number,
+    validate: {
+      validator: function (value) {
+        return value >= 1;
+      },
+      message: "Quantity must be greater than or equal to 1.",
+    },
     required: true,
+    min: 1,
   },
   fees: {
     type: Number,
